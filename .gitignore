@@ -1,0 +1,8 @@
+# Output files
+*.txt
+
+# Binary
+/bin
+
+# MacOS folders
+.DS_Store
