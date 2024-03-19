@@ -18,7 +18,6 @@ int main(int argc, char **argv) {
         if (0 == (retVal = readMatrix(&matrix1, argv[1]))) {
             if (0 == (retVal = readMatrix(&matrix2, argv[2]))) {
                 if (0 == multiplyMatrices(&matrix1, &matrix2, &result)) {
-                    printMatrix(&result);
                     if (0 != (retVal = saveMatrix(&result, argv[3]))) {
                         printf("There was an error in saving matrix to %s, return value = %d.\n", argv[3], retVal);
                     }

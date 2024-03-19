@@ -1,21 +1,15 @@
 #include "matrix_multiplication.h"
 
 #include <ctype.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define NUMBER_BUFFER_SIZE 11
-#define CHAR_TO_INT_OFFSET 48
+#define CHAR_TO_INT_OFFSET '0'
 #define DEFAULT_DIMENTIONS_VALUE -1
-
-void initMatrix(Matrix *const matrixPtr) {
-    if (matrixPtr) {
-        matrixPtr->rows = DEFAULT_DIMENTIONS_VALUE;
-        matrixPtr->columns = DEFAULT_DIMENTIONS_VALUE;
-        matrixPtr->content = NULL;
-    }
-}
+#define DEFAULT_LINE_BUFFER_SIZE 1024
+#define NUMBER_BUFFER_SIZE 11
 
 void deinitMatrix(Matrix *const matrixPtr) {
     if (matrixPtr && matrixPtr->content) {
@@ -26,54 +20,12 @@ void deinitMatrix(Matrix *const matrixPtr) {
     }
 }
 
-void printMatrix(const Matrix *const matrixPtr) {
+void initMatrix(Matrix *const matrixPtr) {
     if (matrixPtr) {
-        for (int i = 0; matrixPtr->rows > i; ++i) {
-            for (int j = 0; matrixPtr->columns > j; ++j) {
-                printf("[%3d] ", matrixPtr->content[i][j]);
-            }
-            printf("\n");
-        }
+        matrixPtr->rows = DEFAULT_DIMENTIONS_VALUE;
+        matrixPtr->columns = DEFAULT_DIMENTIONS_VALUE;
+        matrixPtr->content = NULL;
     }
-}
-
-int readMatrix(Matrix *const matrixPtr, const char *const fileName) {
-    char byte;
-    int row = 0;
-    int column = 0;
-    FILE *file = fopen(fileName, "r");
-
-    if (file && matrixPtr) {
-        while (EOF != (byte = fgetc(file))) {
-            if (isnumber(byte)) {
-                if (DEFAULT_DIMENTIONS_VALUE == matrixPtr->rows) {
-                    matrixPtr->rows = byte - CHAR_TO_INT_OFFSET;
-                } else if (DEFAULT_DIMENTIONS_VALUE == matrixPtr->columns) {
-                    matrixPtr->columns = byte - CHAR_TO_INT_OFFSET;
-                    matrixPtr->content = (int **) malloc(matrixPtr->rows * sizeof(int *));
-                    for (row = 0; matrixPtr->rows > row; ++row) {
-                        matrixPtr->content[row] = (int *) malloc(matrixPtr->columns * sizeof(int));
-                    }
-                    row = 0;
-                } else {
-                    if (matrixPtr->columns <= column) {
-                        row++;
-                        column = 0;
-                    }
-                    if (matrixPtr->rows > row) {
-                        matrixPtr->content[row][column++] = byte - CHAR_TO_INT_OFFSET;
-                    }
-                }
-            }
-        }
-        fclose(file);
-        if (matrixPtr->rows - 1 == row && matrixPtr->columns == column) {
-            return 0;
-        } else {
-            return 2;
-        }
-    }
-    return 1;
 }
 
 int multiplyMatrices(const Matrix *const m1, const Matrix *const m2, Matrix *const result) {
@@ -102,20 +54,88 @@ int multiplyMatrices(const Matrix *const m1, const Matrix *const m2, Matrix *con
     return 1;
 }
 
+void printMatrix(const Matrix *const matrixPtr) {
+    if (matrixPtr) {
+        for (int i = 0; matrixPtr->rows > i; ++i) {
+            for (int j = 0; matrixPtr->columns > j; ++j) {
+                printf("[%3d] ", matrixPtr->content[i][j]);
+            }
+            printf("\n");
+        }
+    }
+}
+
+int readMatrix(Matrix *const matrixPtr, const char *const fileName) {
+    int bytesRead;
+    int column = 0;
+    FILE *file;
+    char *lineBuffer;
+    long unsigned int lineBufferSize = DEFAULT_LINE_BUFFER_SIZE;
+    char numberBuffer[NUMBER_BUFFER_SIZE];
+    int numberBufferIndex = 0;
+    int row = 0;
+
+    if (matrixPtr && (file = fopen(fileName, "r"))) {
+        lineBuffer = malloc(lineBufferSize * sizeof(char));
+        while (EOF != (bytesRead = getline(&lineBuffer, &lineBufferSize, file))) {
+            for (int i = 0; bytesRead > i; ++i) {
+                if ((NUMBER_BUFFER_SIZE - 1 > numberBufferIndex)
+                    && ('-' == lineBuffer[i] || isnumber(lineBuffer[i]))) {
+                    numberBuffer[numberBufferIndex++] = lineBuffer[i];
+                } else if (0 != numberBufferIndex) {
+                    numberBuffer[numberBufferIndex] = '\0';
+                    numberBufferIndex = 0;
+                    int number = atoi(numberBuffer);
+
+                    if (DEFAULT_DIMENTIONS_VALUE == matrixPtr->rows) {
+                        matrixPtr->rows = number;
+                    } else if (DEFAULT_DIMENTIONS_VALUE == matrixPtr->columns) {
+                        matrixPtr->columns = number;
+                        matrixPtr->content = (int **) malloc(matrixPtr->rows * sizeof(int *));
+                        for (row = 0; matrixPtr->rows > row; ++row) {
+                            matrixPtr->content[row] = (int *) malloc(matrixPtr->columns * sizeof(int));
+                        }
+                        row = 0;
+                    } else {
+                        if (matrixPtr->columns <= column) {
+                            row++;
+                            column = 0;
+                        }
+                        if (matrixPtr->rows > row) {
+                            matrixPtr->content[row][column++] = number;
+                        }
+                    }
+                }
+            }
+        }
+        fclose(file);
+        free(lineBuffer);
+
+        if (matrixPtr->rows - 1 == row && matrixPtr->columns == column) {
+            return 0;
+        } else {
+            printMatrix(matrixPtr);
+            return 2;
+        }
+    }
+    return 1;
+}
+
 int saveMatrix(const Matrix *const matrixPtr, const char *const fileName) {
     FILE *file = fopen(fileName, "w");
 
-    if (file && matrixPtr && matrixPtr->content) {
+    if (matrixPtr && matrixPtr->content && (file = fopen(fileName, "w"))) {
         fprintf(file, "%d %d\n", matrixPtr->rows, matrixPtr->columns);
         for (int i = 0; matrixPtr->rows > i; ++i) {
             for (int j = 0; matrixPtr->columns > j; ++j) {
                 fprintf(file, "%d ", matrixPtr->content[i][j]);
             }
             fprintf(file, "\n");
-            }
-            fclose(file);
-            return 0;
         }
+        fclose(file);
+
+        return 0;
+    }
 
     return 1;
 }
