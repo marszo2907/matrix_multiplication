@@ -28,7 +28,7 @@ void initMatrix(Matrix *const matrixPtr) {
     }
 }
 
-int multiplyMatrices(const Matrix *const m1, const Matrix *const m2, Matrix *const result) {
+matrix_ret_val multiplyMatrices(const Matrix *const m1, const Matrix *const m2, Matrix *const result) {
     if (m1 && m1->content && m2 && m2->content && result) {
         if (m1->columns == m2->rows) {
             result->rows = m1->rows;
@@ -47,11 +47,11 @@ int multiplyMatrices(const Matrix *const m1, const Matrix *const m2, Matrix *con
                 }
             }
 
-            return 0;
+            return MATRIX_OK;
         }
-        return 2;
+        return INCOMPATIBLE_MATRICES_SIZE;
     }
-    return 1;
+    return MATRIX_NULL_PTR_PASSED;
 }
 
 void printMatrix(const Matrix *const matrixPtr) {
@@ -65,7 +65,7 @@ void printMatrix(const Matrix *const matrixPtr) {
     }
 }
 
-int readMatrix(Matrix *const matrixPtr, const char *const fileName) {
+matrix_ret_val readMatrix(Matrix *const matrixPtr, const char *const fileName) {
     int bytesRead;
     int column = 0;
     FILE *file;
@@ -112,17 +112,16 @@ int readMatrix(Matrix *const matrixPtr, const char *const fileName) {
         free(lineBuffer);
 
         if (matrixPtr->rows - 1 == row && matrixPtr->columns == column) {
-            return 0;
+            return MATRIX_OK;
         } else {
-            printMatrix(matrixPtr);
-            return 2;
+            return INVALID_FILE_CONTENT;
         }
     }
-    return 1;
+    return NULL_PTR_PASSED_OR_CANT_OPEN_FILE;
 }
 
-int saveMatrix(const Matrix *const matrixPtr, const char *const fileName) {
-    FILE *file = fopen(fileName, "w");
+matrix_ret_val saveMatrix(const Matrix *const matrixPtr, const char *const fileName) {
+    FILE *file;
 
     if (matrixPtr && matrixPtr->content && (file = fopen(fileName, "w"))) {
         fprintf(file, "%d %d\n", matrixPtr->rows, matrixPtr->columns);
@@ -134,8 +133,7 @@ int saveMatrix(const Matrix *const matrixPtr, const char *const fileName) {
         }
         fclose(file);
 
-        return 0;
+        return MATRIX_OK;
     }
-
-    return 1;
+    return NULL_PTR_PASSED_OR_CANT_OPEN_FILE;
 }
