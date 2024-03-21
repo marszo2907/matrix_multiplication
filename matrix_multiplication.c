@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define CHAR_TO_INT_OFFSET '0'
 #define DEFAULT_DIMENTIONS_VALUE -1
@@ -28,8 +29,8 @@ void initMatrix(Matrix *const matrixPtr) {
     }
 }
 
-matrix_ret_val multiplyMatrices(const Matrix *const m1, const Matrix *const m2, Matrix *const result) {
-    if (m1 && m1->content && m2 && m2->content && result) {
+matrix_ret_val multiplyMatrices(const Matrix *const m1, const Matrix *const m2, Matrix *result, const cli_arguments *const cli_args) {
+    if (m1 && m1->content && m2 && m2->content && result && cli_args) {
         if (m1->columns == m2->rows) {
             result->rows = m1->rows;
             result->columns = m2->columns;
@@ -39,13 +40,20 @@ matrix_ret_val multiplyMatrices(const Matrix *const m1, const Matrix *const m2, 
                 memset(result->content[row], 0, result->columns * sizeof(int));
             }
 
+            double begin = omp_get_wtime();
+            #pragma omp parallel for shared(m1, m2, result) if(cli_args->use_parallel && 0 == cli_args->which_loop) num_threads(cli_args->num_threads)
             for (int i = 0; result->rows > i; ++i) {
+                #pragma omp parallel for shared(m1, m2, result) if(cli_args->use_parallel && 1 == cli_args->which_loop) num_threads(cli_args->num_threads)
                 for (int j = 0; result->columns > j; ++j) {
+                    #pragma omp parallel for shared(m1, m2, result) if(cli_args->use_parallel && 2 == cli_args->which_loop) num_threads(cli_args->num_threads)
                     for (int k = 0; m1->columns > k; ++k) {
                         result->content[i][j] += m1->content[i][k] * m2->content[k][j];
                     }
                 }
             }
+            double end = omp_get_wtime();
+            printf("in parallel | thread count | which loop | matrix size | time [s]\n");
+            printf("%11d |%13d |%11d |%12d |%10lf\n", cli_args->use_parallel, cli_args->num_threads, cli_args->which_loop, m1->columns, end - begin);
 
             return MATRIX_OK;
         }

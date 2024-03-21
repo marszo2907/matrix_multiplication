@@ -15,8 +15,9 @@ cli_ret_val get_cli_arguments(const int argc, char ***const argv, cli_arguments 
         cli_args->output_file_name = NULL;
         cli_args->use_parallel = 0u;
         cli_args->which_loop = 0;
+        cli_args->num_threads = 1;
 
-        while(-1 != (flag = getopt(argc, *argv, "1:2:o:pl:"))) {
+        while(-1 != (flag = getopt(argc, *argv, "1:2:o:pl:n:"))) {
             switch(flag) {
                 case '1':
                     cli_args->input_file_name_1 = optarg;
@@ -34,8 +35,12 @@ cli_ret_val get_cli_arguments(const int argc, char ***const argv, cli_arguments 
                     int loop = atoi(optarg);
                     cli_args->which_loop = (0 <= loop && NUMBER_OF_LOOPS > loop) ? loop : 0;
                     break;
+                case 'n':
+                    int num_threads = atoi(optarg);
+                    cli_args->num_threads = 0 < num_threads ? num_threads : 1;
+                    break;
                 case '?':
-                    if ('1' == optopt || '2' == optopt || 'o' == optopt || 'l' == optopt) {
+                    if ('1' == optopt || '2' == optopt || 'o' == optopt || 'l' == optopt || 'n' == optopt) {
                         fprintf(stderr, "Option '-%c' requires an argument.\n", optopt);
                         return MISSING_PARAMETER;
                     } else {

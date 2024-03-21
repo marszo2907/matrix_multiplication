@@ -7,6 +7,7 @@ typedef struct cli_arguments {
     char *output_file_name;
     unsigned int use_parallel: 1;
     int which_loop;
+    int num_threads;
 } cli_arguments;
 
 typedef enum cli_ret_val {

@@ -3,6 +3,7 @@
 
 # Binary
 /bin
+/results
 
 # MacOS folders
 .DS_Store

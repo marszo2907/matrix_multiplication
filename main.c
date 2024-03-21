@@ -16,10 +16,22 @@ int main(int argc, char **argv) {
         initMatrix(&matrix2);
         initMatrix(&result);
 
-        matrix_ret_val open_file_1_ret_val = readMatrix(&matrix1, cli_args.input_file_name_1);
-        matrix_ret_val open_file_2_ret_val = readMatrix(&matrix2, cli_args.input_file_name_2);
+        matrix_ret_val open_file_1_ret_val;
+        matrix_ret_val open_file_2_ret_val;
+        #pragma omp parallel sections shared(open_file_1_ret_val, open_file_2_ret_val) num_threads(2)
+        {
+            #pragma omp section
+            {
+                open_file_1_ret_val = readMatrix(&matrix1, cli_args.input_file_name_1);
+            }
+            #pragma omp section
+            {
+                open_file_2_ret_val = readMatrix(&matrix2, cli_args.input_file_name_2);
+            }
+        }
+
         if (MATRIX_OK == open_file_1_ret_val && MATRIX_OK == open_file_2_ret_val) {
-            matrix_ret_val matrix_multiplicaiton_ret_val = multiplyMatrices(&matrix1, &matrix2, &result);
+            matrix_ret_val matrix_multiplicaiton_ret_val = multiplyMatrices(&matrix1, &matrix2, &result, &cli_args);
             if (MATRIX_OK == matrix_multiplicaiton_ret_val) {
                 matrix_ret_val save_result_ret_val = saveMatrix(&result, cli_args.output_file_name);
                 if (MATRIX_OK != save_result_ret_val) {
