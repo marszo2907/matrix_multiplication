@@ -2,27 +2,19 @@
 #define MATRIX_MULTIPLICATION_H
 
 #include "cli_arguments.h"
+#include "return_values.h"
 
-typedef struct Matrix {
+typedef struct {
     int rows;
     int columns;
     int **content;
-} Matrix;
+} matrix;
 
-typedef enum matrix_ret_val {
-    MATRIX_OK,
-    MATRIX_NOT_OK,
-    MATRIX_NULL_PTR_PASSED,
-    INCOMPATIBLE_MATRICES_SIZE,
-    NULL_PTR_PASSED_OR_CANT_OPEN_FILE,
-    INVALID_FILE_CONTENT
-} matrix_ret_val;
-
-void deinitMatrix(Matrix *const matrixPtr);
-void initMatrix(Matrix *const matrixPtr);
-matrix_ret_val multiplyMatrices(const Matrix *const m1, const Matrix *const m2, Matrix *result, const cli_arguments *const cli_args);
-void printMatrix(const Matrix *const matrixPtr);
-matrix_ret_val readMatrix(Matrix *const matrixPtr, const char *const fileName);
-matrix_ret_val saveMatrix(const Matrix *const matrix, const char *const fileName);
+void deinit_matrix(matrix *const matrix);
+void init_matrix(matrix *const matrix);
+ret_val multiply_matrices(const matrix *const m1, const matrix *const m2, matrix *result, const cli_args *const cli_args);
+void print_matrix(const matrix *const matrix);
+ret_val read_matrix(matrix *const matrix, const char *const file_name);
+ret_val save_matrix(const matrix *const matrix, const char *const file_name);
 
 #endif // MATRIX_MULTIPLICATION_H

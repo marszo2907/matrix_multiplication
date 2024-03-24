@@ -1,9 +1,10 @@
 # Output files
 *.txt
 
-# Binary
+# Binary and aggregated results
 /bin
 /results
+*.out
 
 # MacOS folders
 .DS_Store
